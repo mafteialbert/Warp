@@ -116,7 +116,7 @@ namespace WarpCore
 
 
         #region FFmpeg
-        public async Task FFmmpeg_ExtractRawAudioAsync(string videoFile, string audioFile, int sampleRate, int channels)
+        public async Task FFmpeg_ExtractRawAudioAsync(string videoFile, string audioFile, int sampleRate, int channels)
         {
 
             var psi = new ProcessStartInfo
@@ -141,7 +141,7 @@ namespace WarpCore
             await process.WaitForExitAsync();
         }
 
-        public Stream FFmmpeg_StreamRawAudioAsync(string videoFile, int sampleRate, int channels)
+        public Stream FFmpeg_StreamRawAudioAsync(string videoFile, int sampleRate, int channels)
         {
 
             var psi = new ProcessStartInfo
@@ -165,7 +165,7 @@ namespace WarpCore
             using var process = Process.Start(psi) ?? throw new Exception("Process failed starting");
             return process.StandardOutput.BaseStream;
         }
-        public async Task FFmmpeg_ExtractAudioAsync(string videoFile, string audioFile, int sampleRate, int channels, int bitrate=192)
+        public async Task FFmpeg_ExtractAudioAsync(string videoFile, string audioFile, int sampleRate, int channels, int bitrate = 192)
         {
 
             var psi = new ProcessStartInfo
@@ -188,7 +188,7 @@ namespace WarpCore
             using var process = Process.Start(psi) ?? throw new Exception("Process failed starting");
             await process.WaitForExitAsync();
         }
-        public async Task<(long[] pts, int tbNum, int tbDen)> FFmpeg_GetVideoPTSAndTimebaseAsync(string videoFile)
+        public async Task<long[]> FFmpeg_GetVideoPTSAsync(string videoFile)
         {
             // Use ffprobe to get PTS and timebase
             var psiPTS = new ProcessStartInfo
@@ -210,9 +210,13 @@ namespace WarpCore
             using var processPTS = Process.Start(psiPTS) ?? throw new Exception("Process failed starting");
             string output = (await processPTS.StandardOutput.ReadToEndAsync()).Trim().Replace(",", "");
             await processPTS.WaitForExitAsync();
-            var ptsStrings = output.Split(["\r","\n","\r\n"], StringSplitOptions.RemoveEmptyEntries);
+            var ptsStrings = output.Split(["\r", "\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries);
             long[] pts = [.. ptsStrings.Select(s => long.Parse(s.Trim()))];
+            return pts;
+        }
 
+        public async Task<(int tbNum, int tbDen)> FFmpeg_GetVideoTimebaseAsync(string videoFile)
+        {
             // Get video timebase
             var psiTimebase = new ProcessStartInfo
             {
@@ -238,11 +242,11 @@ namespace WarpCore
             int tbNum = int.Parse(tbParts[0]);
             int tbDen = int.Parse(tbParts[1]);
 
-            return (pts, tbNum, tbDen);
+            return (tbNum, tbDen);
         }
 
 
-        public async Task FFmmpeg_WarpAsync(string videoFile, FileInfo timemapVideo, string audioWarped, string outputVideo)
+        public async Task FFmpeg_WarpAsync(string videoFile, FileInfo timemapVideo, string audioWarped, string outputVideo)
         {
 
 

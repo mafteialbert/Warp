@@ -7,25 +7,57 @@ namespace WarpCore
     {
         private readonly FF ff = new(resourcePath);
 
-        public async Task<FileInfo> ProcessVideoAsync(FileInfo videoFile, IVoiceActivityDetector activityDetector, WarpParameters parameters)
+        public async Task<FileInfo> ProcessVideoAsync(FileInfo videoFile, IVoiceActivityDetector activityDetector, WarpParameters parameters, Action<string>? progress = null)
         {
-
             string processingTempFolder = Path.Combine(Path.GetTempPath(), "WarpCore_" + Guid.NewGuid());
+            progress?.Invoke($"Creating temporary files at: {processingTempFolder}");
             Directory.CreateDirectory(processingTempFolder);
             var warpedVideo = new FileInfo(Path.Combine(processingTempFolder, "video.warped.mp4"));
             var timemapAudio = new FileInfo(Path.Combine(processingTempFolder, "timemap.audio.txt"));
             var timemapVideo = new FileInfo(Path.Combine(processingTempFolder, "timemap.video.raw"));
             var audio = new FileInfo(Path.Combine(processingTempFolder, "audio.mp3"));
             var warpedAudio = new FileInfo(Path.Combine(processingTempFolder, "audio.warped.mp3"));
-            int sampleRate = await ff.FFprobe_GetSampleRateAsync(videoFile.FullName);
-            int channelCount = await ff.FFprobe_GetChannelCountAsync(videoFile.FullName);
-            (long[] pts, int timebaseDen, int timebaseNum) = await ff.FFmpeg_GetVideoPTSAndTimebaseAsync(videoFile.FullName);
 
-            await ff.FFmmpeg_ExtractAudioAsync(videoFile.FullName, audio.FullName, sampleRate, channelCount);
-            VADResult result = await activityDetector.DetectVoiceActivity(ff.FFmmpeg_StreamRawAudioAsync(videoFile.FullName, 16000, 1));
+            var sampleRateTask = ff.FFprobe_GetSampleRateAsync(videoFile.FullName).ContinueWith(t => {
+                progress?.Invoke("Got sample rate.");
+                return t.Result;  
+            });
 
+            var channelCountTask = ff.FFprobe_GetChannelCountAsync(videoFile.FullName).ContinueWith(t => {
+                progress?.Invoke("Got channel count.");
+                return t.Result;
+            });
 
-            long totalSamples = await ff.FFprobe_GetTotalSamplesAsync(videoFile.FullName);
+            var videoPTSTask = ff.FFmpeg_GetVideoPTSAsync(videoFile.FullName).ContinueWith(t => {
+                progress?.Invoke("Got video PTS.");
+                return t.Result;
+            });
+            var videoTimebaseTask = ff.FFmpeg_GetVideoTimebaseAsync(videoFile.FullName).ContinueWith(t => {
+                progress?.Invoke("Got video timebase.");
+                return t.Result;
+            });
+
+            var detectVoiceActivityTask = activityDetector.DetectVoiceActivity(ff.FFmpeg_StreamRawAudioAsync(videoFile.FullName, 16000, 1)).ContinueWith(t => {
+                progress?.Invoke("Got voice activity.");
+                return t.Result;
+            });
+
+            var totalSamplesTask = ff.FFprobe_GetTotalSamplesAsync(videoFile.FullName).ContinueWith(t => {
+                progress?.Invoke("Got total samples.");
+                return t.Result;
+            });
+
+            int sampleRate = await sampleRateTask;
+            int channelCount = await channelCountTask;
+            var extractAudioTask = ff.FFmpeg_ExtractAudioAsync(videoFile.FullName, audio.FullName, sampleRate, channelCount).ContinueWith(t => {
+                progress?.Invoke("Extracted audio.");
+            });
+
+            await extractAudioTask;
+            long totalSamples = await totalSamplesTask;
+            VADResult result = await detectVoiceActivityTask;
+            long[] pts = await videoPTSTask;
+            (int timebaseDen, int timebaseNum) = await videoTimebaseTask;
 
             // Number of windows
             int numWindows = result.Probabilities.Length;
@@ -65,6 +97,7 @@ namespace WarpCore
                 writer.WriteLine($"{totalSamples} {Math.Round(cumulativeOut)}");
             }
 
+            progress?.Invoke("Processed audio timemap.");
 
             const long AV_TIME_BASE = 1_000_000;
 
@@ -127,8 +160,11 @@ namespace WarpCore
                 }
             }
 
+            progress?.Invoke("Processed video timemap.");
             await ff.Rubberband_WarpAsync(audio.FullName, cumulativeOut / sampleRate, timemapAudio.FullName, warpedAudio.FullName);
-            await ff.FFmmpeg_WarpAsync(videoFile.FullName, timemapVideo, warpedAudio.FullName, warpedVideo.FullName);
+            progress?.Invoke("Rubberband finished.");
+            await ff.FFmpeg_WarpAsync(videoFile.FullName, timemapVideo, warpedAudio.FullName, warpedVideo.FullName);
+            progress?.Invoke("FFmpeg finished.");
             return warpedVideo;
         }
     }
