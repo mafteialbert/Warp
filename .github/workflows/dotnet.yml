@@ -1,0 +1,132 @@
+name: Build All
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v4
+
+      - name: Checkout FFmpeg-warp
+        uses: actions/checkout@v4
+        with:
+          repository: mafteialbert/FFmpeg-warp
+          path: ffmpeg
+
+      - name: Checkout Rubberband-warp
+        uses: actions/checkout@v4
+        with:
+          repository: mafteialbert/rubberband-warp
+          path: rubberband
+
+      # --------------------------
+      # FFmpeg build
+      # --------------------------
+      - name: Build FFmpeg (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update
+          sudo apt install -y autoconf automake build-essential \
+            pkg-config yasm nasm libx264-dev libnvidia-encode1
+
+          cd ffmpeg
+          ./configure \
+            --enable-gpl \
+            --enable-libx264 \
+            --enable-nvenc \
+            --enable-nonfree \
+            --prefix=$PWD/out
+
+          make -j$(nproc)
+          make install
+
+      - name: Build FFmpeg (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install x264
+          cd ffmpeg
+          ./configure \
+            --enable-gpl \
+            --enable-libx264 \
+            --enable-videotoolbox \
+            --prefix=$PWD/out
+          make -j$(sysctl -n hw.ncpu)
+          make install
+
+      - name: Build FFmpeg (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm mingw-w64-x86_64-x264 yasm pkg-config
+          cd ffmpeg
+          ./configure \
+            --enable-gpl \
+            --enable-libx264 \
+            --enable-nvenc \
+            --toolchain=msvc \
+            --prefix=$PWD/out
+          make -j8
+          make install
+
+      # --------------------------
+      # Rubberband static CLI
+      # --------------------------
+      - name: Build Rubberband static CLI
+        run: |
+          cd rubberband
+          meson setup build -Ddefault_library=static -Dcli=enabled
+          meson compile -C build
+          cp build/rubberband ../rubberband-cli
+
+      # --------------------------
+      # Build Avalonia C# app
+      # --------------------------
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build Avalonia app
+        run: dotnet publish -c Release -o out
+
+      # --------------------------
+      # Package final bundle
+      # --------------------------
+      - name: Package bundle
+        run: |
+          mkdir package
+          cp out/* package/
+          cp ffmpeg/out/bin/* package/
+          cp rubberband-cli package/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}
+          path: package
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: builds
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: builds/**/*
