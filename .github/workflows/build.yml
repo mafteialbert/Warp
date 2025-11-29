@@ -81,21 +81,36 @@ jobs:
             git
           msystem: MINGW64
 
-      - name: Build FFmpeg (Windows)
-        shell: msys2 {0}
+      - name: Install dependencies
+        uses: microsoft/setup-msbuild@v2
+      
+      - name: Install NASM
+        uses: ilammy/setup-nasm@v1
+      
+      - name: Checkout x264
+        run: |
+          git clone https://code.videolan.org/videolan/x264.git
+          cd x264
+          ./configure --enable-static --disable-cli --host=x86_64-w64-mingw32
+          make -j4
+          cp libx264.a ..
+      
+      - name: Build FFmpeg (Windows MSVC)
+        shell: bash
         run: |
           cd ffmpeg
           ./configure \
-            --toolchain=mingw64 \
-            --arch=x86_64 \
-            --target-os=mingw32 \
+            --toolchain=msvc \
             --enable-gpl \
             --enable-libx264 \
-            --enable-nvenc \
             --enable-nonfree \
+            --enable-nvenc \
+            --extra-cflags="-I../x264" \
+            --extra-ldflags="../libx264.a" \
             --prefix=$PWD/out
-          make -j8
+          make -j4
           make install
+
 
 
       # --------------------------
