@@ -68,21 +68,35 @@ jobs:
           make -j$(sysctl -n hw.ncpu)
           make install
 
+      - name: Install MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: |
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-yasm
+            mingw-w64-x86_64-nasm
+            mingw-w64-x86_64-pkg-config
+            mingw-w64-x86_64-x264
+            git
+          msystem: MINGW64
+
       - name: Build FFmpeg (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: bash
+        shell: msys2 {0}
         run: |
-          pacman -Syu --noconfirm
-          pacman -S --noconfirm mingw-w64-x86_64-x264 yasm pkg-config
           cd ffmpeg
           ./configure \
+            --toolchain=mingw64 \
+            --arch=x86_64 \
+            --target-os=mingw32 \
             --enable-gpl \
             --enable-libx264 \
             --enable-nvenc \
-            --toolchain=msvc \
+            --enable-nonfree \
             --prefix=$PWD/out
           make -j8
           make install
+
 
       # --------------------------
       # Rubberband static CLI
