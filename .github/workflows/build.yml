@@ -38,8 +38,13 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y autoconf automake build-essential \
-            pkg-config yasm nasm libx264-dev libnvidia-encode1
-
+            pkg-config yasm nasm libx264-dev
+          # Install NVENC headers
+          git clone https://git.videolan.org/git/ffmpeg/nv-codec-headers.git
+          cd nv-codec-headers
+          make
+          sudo make install
+          cd ..
           cd ffmpeg
           ./configure \
             --enable-gpl \
@@ -47,7 +52,6 @@ jobs:
             --enable-nvenc \
             --enable-nonfree \
             --prefix=$PWD/out
-
           make -j$(nproc)
           make install
 
