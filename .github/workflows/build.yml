@@ -82,7 +82,7 @@ jobs:
           export PATH="/mingw64/bin:$PATH"
           cd $GITHUB_WORKSPACE/nv-codec-headers
           make install
-          cd rubberband
+          cd $GITHUB_WORKSPACE/rubberband
           meson setup build -Ddefault_library=static -Dcmdline=enabled
           meson compile -C build
           cp build/rubberband.exe /github/workspace/rubberband-windows.exe
