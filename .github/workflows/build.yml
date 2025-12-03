@@ -103,6 +103,7 @@ jobs:
           msystem: MINGW64
           update: true
           install: |
+            git
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-yasm
             mingw-w64-x86_64-nasm
