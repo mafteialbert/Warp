@@ -15,7 +15,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-
+    defaults:
+      run:
+        shell: ${{ matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash {0}' }}
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
@@ -32,28 +34,101 @@ jobs:
           repository: mafteialbert/rubberband-warp
           path: rubberband
 
-      # ----------------------------
-      # LINUX: build x264 & FFmpeg
-      # ----------------------------
-      - name: Build on Linux (x264 + nvenc headers + vaapi + ffmpeg)
+      - name: Checkout nv-codec-headers
+        uses: actions/checkout@v4
+        with:
+          repository: FFmpeg/nv-codec-headers
+          path: nv-codec-headers
+
+      - name: Setup MSYS2 and install packages
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: |
+            git
+            make
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-yasm
+            mingw-w64-x86_64-nasm
+            mingw-w64-x86_64-pkg-config
+            mingw-w64-x86_64-x264
+            mingw-w64-x86_64-ffnvcodec-headers
+            mingw-w64-x86_64-meson 
+            mingw-w64-x86_64-libsndfile 
+            mingw-w64-x86_64-libsamplerate 
+            mingw-w64-x86_64-fftw
+
+      - name: Build Windows 
+        if: matrix.os == 'windows-latest'
+        shell: msys2 {0}
+        run: |
+          set -e
+          git clone https://code.videolan.org/videolan/x264.git
+          cd x264
+          ./configure \
+            --host=x86_64-w64-mingw32 \
+            --enable-static \
+            --disable-cli \
+            --disable-opencl
+          make -j$(nproc)
+          cp libx264.a /mingw64/lib/
+          cp x264_config.h x264.h /mingw64/include/
+
+          
+
+          # Ensure MSYS2 mingw64 is used
+          export PATH="/mingw64/bin:$PATH"
+          cd $GITHUB_WORKSPACE/nv-codec-headers
+          make install
+
+          pacman -S --noconfirm 
+          cd rubberband
+          meson setup build -Ddefault_library=static -Dcmdline=enabled
+          meson compile -C build
+          cp build/rubberband.exe /github/workspace/rubberband-windows.exe
+
+          cd $GITHUB_WORKSPACE/ffmpeg
+          PKG_CONFIG_PATH="/mingw64/lib/pkgconfig"
+          export PKG_CONFIG_PATH
+          ./configure \
+            --prefix="$PWD/out" \
+            --enable-gpl \
+            --enable-nonfree \
+            --enable-libx264 \
+            --enable-nvenc \
+            --extra-cflags="-I/mingw64/include" \
+            --extra-ldflags="-L/mingw64/lib"
+          make -j$(nproc)
+          make install
+
+          cp out/bin/ffmpeg.exe $GITHUB_WORKSPACE/ffmpeg-windows.exe
+          cp out/bin/ffprobe.exe $GITHUB_WORKSPACE/ffprobe-windows.exe
+
+      - name: Build Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
+          set -e
+
           sudo apt update
           sudo apt install -y autoconf automake build-essential \
             pkg-config yasm nasm libx264-dev libsndfile1-dev libsamplerate0-dev \
             libva-dev libdrm-dev libavdevice-dev
 
           # NVENC headers (compile-only)
-          git clone https://git.videolan.org/git/ffmpeg/nv-codec-headers.git /tmp/nv-codec-headers
-          cd /tmp/nv-codec-headers
+          cd $GITHUB_WORKSPACE/nv-codec-headers
           make
           sudo make install
-          cd $GITHUB_WORKSPACE
+          
+          sudo apt update
+          sudo apt install -y build-essential meson libsndfile1-dev libsamplerate0-dev libfftw3-dev
+          cd $GITHUB_WORKSPACE/rubberband
+          meson setup build -Ddefault_library=static -Dcmdline=enabled
+          meson compile -C build
+          cp build/rubberband $GITHUB_WORKSPACE/rubberband-linux
 
-          # x264 from distro or build from source if you prefer
-          # distro libx264-dev is usually fine; if you want to build from source, do that here.
-
-          # Build FFmpeg enabling x264, nvenc (compile-only), vaapi (AMD/Intel hw on Linux)
+          cd $GITHUB_WORKSPACE/ffmpeg
           cd ffmpeg
           ./configure \
             --prefix="$PWD/out" \
@@ -80,7 +155,12 @@ jobs:
         run: |
           brew update
           brew install yasm nasm pkg-config libsamplerate libsndfile x264
-          cd ffmpeg
+          brew install meson pkg-config libsamplerate libsndfile fftw
+          cd $GITHUB_WORKSPACE/rubberband
+          meson setup build -Ddefault_library=static -Dcmdline=enabled
+          meson compile -C build
+          cp build/rubberband $GITHUB_WORKSPACE/rubberband-macos
+          cd $GITHUB_WORKSPACE/ffmpeg
           ./configure \
             --prefix="$PWD/out" \
             --enable-gpl \
@@ -93,107 +173,17 @@ jobs:
           cp out/bin/ffmpeg $GITHUB_WORKSPACE/ffmpeg-macos
           cp out/bin/ffprobe $GITHUB_WORKSPACE/ffprobe-macos
 
-      # ----------------------------
-      # Windows: setup MSYS2 / MINGW64 and build using pacman packages
-      # ----------------------------
-      - name: Setup MSYS2 and install packages
-        if: matrix.os == 'windows-latest'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: |
-            git
-            make
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-yasm
-            mingw-w64-x86_64-nasm
-            mingw-w64-x86_64-pkg-config
-            mingw-w64-x86_64-x264
-            mingw-w64-x86_64-ffnvcodec-headers
-            
-      - name: Build x264 Windows
-        if: matrix.os == 'windows-latest'
-        shell: msys2 {0}
-        run: |
-          git clone https://code.videolan.org/videolan/x264.git
-          cd x264
-          ./configure \
-            --host=x86_64-w64-mingw32 \
-            --enable-static \
-            --disable-cli \
-            --disable-opencl
-          make -j$(nproc)
-          cp libx264.a /mingw64/lib/
-          cp x264_config.h x264.h /mingw64/include/
 
-      # We must run build steps in the msys2 shell to access pacman/mingw tools
-      - name: Build on Windows (x264 already from pacman; build FFmpeg with nv-codec-headers)
-        if: matrix.os == 'windows-latest'
-        shell: msys2 {0}
-        run: |
-          set -e
 
-          # Ensure MSYS2 mingw64 is used
-          export PATH="/mingw64/bin:$PATH"
 
-          # Install NVENC headers (compile-only) for Windows (same repo)
-          git clone https://github.com/FFmpeg/nv-codec-headers.git /tmp/nv-codec-headers
-          cd /tmp/nv-codec-headers
-          make install
-          cd $GITHUB_WORKSPACE
-          # Build FFmpeg using mingw-w64 toolchain
-          cd ffmpeg
-          PKG_CONFIG_PATH="/mingw64/lib/pkgconfig"
-          export PKG_CONFIG_PATH
-          ./configure \
-            --prefix="$PWD/out" \
-            --enable-gpl \
-            --enable-nonfree \
-            --enable-libx264 \
-            --enable-nvenc \
-            --extra-cflags="-I/mingw64/include" \
-            --extra-ldflags="-L/mingw64/lib"
-          make -j$(nproc)
-          make install
 
-          cp out/bin/ffmpeg.exe $GITHUB_WORKSPACE/ffmpeg-windows.exe
-          cp out/bin/ffprobe.exe $GITHUB_WORKSPACE/ffprobe-windows.exe
-
-      # ----------------------------
-      # Build Rubberband CLI (static where possible)
-      # ----------------------------
-      - name: Build Rubberband (platform-specific)
-        run: |
-          set -e
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            sudo apt update
-            sudo apt install -y build-essential meson libsndfile1-dev libsamplerate0-dev libfftw3-dev
-            cd rubberband-warp || cd rubberband
-            meson setup build -Ddefault_library=static -Dcmdline=enabled
-            meson compile -C build
-            cp build/rubberband $GITHUB_WORKSPACE/rubberband-linux
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            brew install meson pkg-config libsamplerate libsndfile fftw
-            cd rubberband-warp || cd rubberband
-            meson setup build -Ddefault_library=static -Dcmdline=enabled
-            meson compile -C build
-            cp build/rubberband $GITHUB_WORKSPACE/rubberband-macos
-          else
-            # Windows: build in MSYS2 environment to get mingw toolchain if needed
-            echo "For Windows, Rubberband will be built via MSYS2 shell step."
-          fi
 
       - name: Build Rubberband on Windows (MSYS2)
         if: matrix.os == 'windows-latest'
         shell: msys2 {0}
         run: |
           export PATH="/mingw64/bin:$PATH"
-          pacman -S --noconfirm mingw-w64-x86_64-meson mingw-w64-x86_64-libsndfile mingw-w64-x86_64-libsamplerate mingw-w64-x86_64-fftw
-          cd rubberband
-          meson setup build -Ddefault_library=static -Dcmdline=enabled
-          meson compile -C build
-          cp build/rubberband.exe /github/workspace/rubberband-windows.exe
+          
 
       # ----------------------------
       # Publish Avalonia (.NET) app
@@ -217,33 +207,40 @@ jobs:
       # ----------------------------
       # Copy native binaries into app bundle
       # ----------------------------
-      - name: Copy native binaries into bundle
+      - name: Copy Linux
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          mkdir -p output/Native
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            cp $GITHUB_WORKSPACE/ffmpeg-linux output/Native/ffmpeg || true
-            cp $GITHUB_WORKSPACE/ffprobe-linux output/Native/ffprobe || true
-            cp $GITHUB_WORKSPACE/rubberband-linux output/Native/rubberband || true
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            cp $GITHUB_WORKSPACE/ffmpeg-macos output/Native/ffmpeg || true
-            cp $GITHUB_WORKSPACE/ffprobe-macos output/Native/ffprobe || true
-            cp $GITHUB_WORKSPACE/rubberband-macos output/Native/rubberband || true
-          else
-            cp $GITHUB_WORKSPACE/ffmpeg-windows.exe output/Native/ffmpeg.exe || true
-            cp $GITHUB_WORKSPACE/ffprobe-windows.exe output/Native/ffprobe.exe || true
-            cp $GITHUB_WORKSPACE/rubberband-windows.exe output/Native/rubberband.exe || true
-          fi
-
+          mkdir -p output/res
+          cp $GITHUB_WORKSPACE/ffmpeg-linux output/Native/ffmpeg 
+          cp $GITHUB_WORKSPACE/ffprobe-linux output/Native/ffprobe 
+          cp $GITHUB_WORKSPACE/rubberband-linux output/Native/rubberband 
+      
+      - name: Copy Windows
+        if: matrix.os == 'windows-latest'
+        shell: msys2 {0}
+        run: |
+          cp $GITHUB_WORKSPACE/ffmpeg-windows.exe output/Native/ffmpeg.exe 
+          cp $GITHUB_WORKSPACE/ffprobe-windows.exe output/Native/ffprobe.exe 
+          cp $GITHUB_WORKSPACE/rubberband-windows.exe output/Native/rubberband.exe 
+          
+      - name: Copy macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          cp $GITHUB_WORKSPACE/ffmpeg-macos output/Native/ffmpeg
+          cp $GITHUB_WORKSPACE/ffprobe-macos output/Native/ffprobe 
+          cp $GITHUB_WORKSPACE/rubberband-macos output/Native/rubberband 
+          
+          
       - name: Zip final bundle
         run: |
           cd output
-          zip -r "../MyApp-${{ matrix.os }}.zip" .
+          zip -r "../Warp-${{ matrix.os }}.zip" .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyApp-${{ matrix.os }}
-          path: MyApp-${{ matrix.os }}.zip
+          name: Warp-${{ matrix.os }}
+          path: Warp-${{ matrix.os }}.zip
 
   release:
     needs: build
