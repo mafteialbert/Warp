@@ -110,6 +110,7 @@ jobs:
             mingw-w64-x86_64-nasm
             mingw-w64-x86_64-pkg-config
             mingw-w64-x86_64-x264
+            mingw-w64-x86_64-ffnvcodec-headers
             
       - name: Build x264 Windows
         if: matrix.os == 'windows-latest'
