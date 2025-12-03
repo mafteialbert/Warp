@@ -110,6 +110,20 @@ jobs:
             mingw-w64-x86_64-nasm
             mingw-w64-x86_64-pkg-config
             mingw-w64-x86_64-x264
+            
+      - name: Build x264 Windows
+        shell: msys2 {0}
+        run: |
+          git clone https://code.videolan.org/videolan/x264.git
+          cd x264
+          ./configure \
+            --host=x86_64-w64-mingw32 \
+            --enable-static \
+            --disable-cli \
+            --disable-opencl
+          make -j$(nproc)
+          cp libx264.a /mingw64/lib/
+          cp x264_config.h x264.h /mingw64/include/
 
       # We must run build steps in the msys2 shell to access pacman/mingw tools
       - name: Build on Windows (x264 already from pacman; build FFmpeg with nv-codec-headers)
@@ -125,21 +139,6 @@ jobs:
           git clone https://github.com/FFmpeg/nv-codec-headers.git /tmp/nv-codec-headers
           cd /tmp/nv-codec-headers
           make install
-          cd /github/workspace
-
-          # (Optional) If you need AMD AMF support for Windows, provide AMD AMF SDK URL in secret AMD_AMF_SDK_URL
-          if [ -n "${AMD_AMF_SDK_URL}" ]; then
-            echo "Downloading AMD AMF SDK from secret..."
-            mkdir -p /tmp/amf-sdk
-            curl -L -o /tmp/amf-sdk/amf-sdk.zip "${AMD_AMF_SDK_URL}"
-            unzip /tmp/amf-sdk/amf-sdk.zip -d /tmp/amf-sdk
-            # NOTE: MSYS build with AMF may require MSVC toolchain + Visual Studio. We place headers under /mingw64/include/amf
-            cp -r /tmp/amf-sdk/include /mingw64/include/amf || true
-            cp -r /tmp/amf-sdk/lib /mingw64/lib/amf || true
-            echo "Attempted to install AMF headers/libraries (may need MSVC)."
-          else
-            echo "AMD_AMF_SDK_URL not provided — skipping AMF install."
-          fi
 
           # Build FFmpeg using mingw-w64 toolchain
           cd ffmpeg
