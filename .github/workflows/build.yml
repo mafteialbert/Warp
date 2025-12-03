@@ -121,10 +121,8 @@ jobs:
           export PATH="/mingw64/bin:$PATH"
 
           # Install NVENC headers (compile-only) for Windows (same repo)
-          git clone https://git.videolan.org/git/ffmpeg/nv-codec-headers.git /tmp/nv-codec-headers
+          git clone https://github.com/FFmpeg/nv-codec-headers.git /tmp/nv-codec-headers
           cd /tmp/nv-codec-headers
-          ./configure --prefix=/mingw64
-          make
           make install
           cd /github/workspace
 
