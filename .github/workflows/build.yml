@@ -140,7 +140,7 @@ jobs:
           git clone https://github.com/FFmpeg/nv-codec-headers.git /tmp/nv-codec-headers
           cd /tmp/nv-codec-headers
           make install
-
+          cd $GITHUB_WORKSPACE
           # Build FFmpeg using mingw-w64 toolchain
           cd ffmpeg
           PKG_CONFIG_PATH="/mingw64/lib/pkgconfig"
