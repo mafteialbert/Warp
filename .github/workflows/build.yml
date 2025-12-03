@@ -192,25 +192,24 @@ jobs:
       - name: Copy Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-          mkdir -p output/res
-          cp $GITHUB_WORKSPACE/ffmpeg-linux output/Native/ffmpeg 
-          cp $GITHUB_WORKSPACE/ffprobe-linux output/Native/ffprobe 
-          cp $GITHUB_WORKSPACE/rubberband-linux output/Native/rubberband 
+          cp $GITHUB_WORKSPACE/ffmpeg-linux output/res/ffmpeg 
+          cp $GITHUB_WORKSPACE/ffprobe-linux output/res/ffprobe 
+          cp $GITHUB_WORKSPACE/rubberband-linux output/res/rubberband 
       
       - name: Copy Windows
         if: matrix.os == 'windows-latest'
         shell: msys2 {0}
         run: |
-          cp $GITHUB_WORKSPACE/ffmpeg-windows.exe output/Native/ffmpeg.exe 
-          cp $GITHUB_WORKSPACE/ffprobe-windows.exe output/Native/ffprobe.exe 
-          cp $GITHUB_WORKSPACE/rubberband-windows.exe output/Native/rubberband.exe 
+          cp $GITHUB_WORKSPACE/ffmpeg-windows.exe output/res/ffmpeg.exe 
+          cp $GITHUB_WORKSPACE/ffprobe-windows.exe output/res/ffprobe.exe 
+          cp $GITHUB_WORKSPACE/rubberband-windows.exe output/res/rubberband.exe 
           
       - name: Copy macOS
         if: matrix.os == 'macos-latest'
         run: |
-          cp $GITHUB_WORKSPACE/ffmpeg-macos output/Native/ffmpeg
-          cp $GITHUB_WORKSPACE/ffprobe-macos output/Native/ffprobe 
-          cp $GITHUB_WORKSPACE/rubberband-macos output/Native/rubberband 
+          cp $GITHUB_WORKSPACE/ffmpeg-macos output/res/ffmpeg
+          cp $GITHUB_WORKSPACE/ffprobe-macos output/res/ffprobe 
+          cp $GITHUB_WORKSPACE/rubberband-macos output/res/rubberband 
           
           
       - name: Zip final bundle
