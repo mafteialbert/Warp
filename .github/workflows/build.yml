@@ -108,8 +108,6 @@ jobs:
             mingw-w64-x86_64-nasm
             mingw-w64-x86_64-pkg-config
             mingw-w64-x86_64-x264
-            mingw-w64-x86_64-ffmpeg  # optional, but we'll build ffmpeg from source below if you prefer
-            git
 
       # We must run build steps in the msys2 shell to access pacman/mingw tools
       - name: Build on Windows (x264 already from pacman; build FFmpeg with nv-codec-headers)
