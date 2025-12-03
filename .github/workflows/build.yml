@@ -129,7 +129,6 @@ jobs:
           cp build/rubberband $GITHUB_WORKSPACE/rubberband-linux
 
           cd $GITHUB_WORKSPACE/ffmpeg
-          cd ffmpeg
           ./configure \
             --prefix="$PWD/out" \
             --enable-gpl \
@@ -173,21 +172,6 @@ jobs:
           cp out/bin/ffmpeg $GITHUB_WORKSPACE/ffmpeg-macos
           cp out/bin/ffprobe $GITHUB_WORKSPACE/ffprobe-macos
 
-
-
-
-
-
-      - name: Build Rubberband on Windows (MSYS2)
-        if: matrix.os == 'windows-latest'
-        shell: msys2 {0}
-        run: |
-          export PATH="/mingw64/bin:$PATH"
-          
-
-      # ----------------------------
-      # Publish Avalonia (.NET) app
-      # ----------------------------
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
