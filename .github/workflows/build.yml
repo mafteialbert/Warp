@@ -85,7 +85,7 @@ jobs:
           cd $GITHUB_WORKSPACE/rubberband
           meson setup build -Ddefault_library=static -Dcmdline=enabled
           meson compile -C build
-          cp build/rubberband.exe /github/workspace/rubberband-windows.exe
+          cp build/rubberband.exe $GITHUB_WORKSPACE/rubberband-windows.exe
 
           cd $GITHUB_WORKSPACE/ffmpeg
           PKG_CONFIG_PATH="/mingw64/lib/pkgconfig"
