@@ -157,8 +157,8 @@ jobs:
           make -j$(nproc)
           make install
 
-          cp out/bin/ffmpeg.exe /github/workspace/ffmpeg-windows.exe
-          cp out/bin/ffprobe.exe /github/workspace/ffprobe-windows.exe
+          cp out/bin/ffmpeg.exe $GITHUB_WORKSPACE/ffmpeg-windows.exe
+          cp out/bin/ffprobe.exe $GITHUB_WORKSPACE/ffprobe-windows.exe
 
       # ----------------------------
       # Build Rubberband CLI (static where possible)
