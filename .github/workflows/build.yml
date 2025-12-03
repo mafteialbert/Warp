@@ -19,6 +19,8 @@ jobs:
       run:
         shell: ${{ matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash {0}' }}
     steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -38,9 +40,7 @@ jobs:
           dotnet publish $AVALONIA_PROJECT -c Release -r $RUNTIME --self-contained true -o output
 
     
-      - name: Checkout main repo
-        uses: actions/checkout@v4
-
+      
       - name: Checkout FFmpeg-warp
         uses: actions/checkout@v4
         with:
