@@ -19,6 +19,25 @@ jobs:
       run:
         shell: ${{ matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash {0}' }}
     steps:
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish Avalonia app (self-contained)
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            RUNTIME="linux-x64"
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            RUNTIME="osx-x64"
+          else
+            RUNTIME="win-x64"
+            export PATH="/c/Program Files/dotnet:$PATH"
+          fi
+          dotnet publish $AVALONIA_PROJECT -c Release -r $RUNTIME --self-contained true -o output
+
+    
       - name: Checkout main repo
         uses: actions/checkout@v4
 
@@ -170,22 +189,7 @@ jobs:
           cp out/bin/ffmpeg $GITHUB_WORKSPACE/ffmpeg-macos
           cp out/bin/ffprobe $GITHUB_WORKSPACE/ffprobe-macos
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
-
-      - name: Publish Avalonia app (self-contained)
-        run: |
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            RUNTIME="linux-x64"
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            RUNTIME="osx-x64"
-          else
-            RUNTIME="win-x64"
-          fi
-          dotnet publish $AVALONIA_PROJECT -c Release -r $RUNTIME --self-contained true -o output
-
+      
       # ----------------------------
       # Copy native binaries into app bundle
       # ----------------------------
