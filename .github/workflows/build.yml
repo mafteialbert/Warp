@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AVALONIA_PROJECT: "src/MyApp/MyApp.csproj"   # <- change to your project path
+  AVALONIA_PROJECT: "Warp/Warp.csproj"   # <- change to your project path
 
 jobs:
   build:
@@ -60,8 +60,6 @@ jobs:
             --enable-gpl \
             --enable-nonfree \
             --enable-libx264 \
-            --enable-libsamplerate \
-            --enable-libsndfile \
             --enable-nvenc \
             --enable-vaapi \
             --extra-cflags="-I/usr/include" \
