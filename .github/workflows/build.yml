@@ -51,9 +51,15 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: builds
+
+      - name: Zip artifact folders
+        run: |
+          cd builds
+          for dir in */; do zip -r "${dir%/}.zip" "$dir"; done
+
       - uses: softprops/action-gh-release@v2
         with:
-          files: builds/* 
+          files: builds/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
