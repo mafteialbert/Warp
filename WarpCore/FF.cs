@@ -14,7 +14,6 @@ namespace WarpCore
         private readonly string FFmpegPath = Path.Combine(resourceFolderPath, "ffmpeg"+suffix);
         private readonly string FFprobePath = Path.Combine(resourceFolderPath, "ffprobe" + suffix);
         private readonly string RubberbandPath = Path.Combine(resourceFolderPath, "rubberband" + suffix);
-        //TEST 2
 
         #region FFprobe
 
