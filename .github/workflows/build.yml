@@ -1,0 +1,65 @@
+name: Build All (FFmpeg + Rubberband + Avalonia)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  AVALONIA_PROJECT: "Warp/Warp.csproj"   # <- change to your project path
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+        - os: ubuntu-latest
+          runtime: linux-x64
+        - os: macos-latest
+          runtime: osx-x64
+        - os: windows-latest
+          runtime: win-x64
+    steps:
+      - name: Checkout main repo  
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+            
+      - name: Publish Avalonia app (self-contained)
+        run: |
+          dotnet publish $AVALONIA_PROJECT \
+          -c Release \
+          -r ${{ matrix.runtime }} \
+          --self-contained true \
+          -o output
+
+      - name: Zip final bundle
+        run: |
+          cd output
+          zip -r "../Warp-${{ matrix.os }}.zip" .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Warp-${{ matrix.os }}
+          path: Warp-${{ matrix.os }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: builds
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: builds/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

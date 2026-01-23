@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="Warp.MainWindow"
+        Title="Video Warp"
+        Width="600" Height="400"
+        MinWidth="500"
+        MinHeight="350"
+        Background="#FF1E1E1E">
+
+    <Grid RowDefinitions="Auto, *, Auto" Margin="10">
+        <TextBlock Text="Video Warp"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,10"
+                   Grid.Row="0"/>
+
+        <TextBox Name="LogConsole"
+                 Grid.Row="1"
+                 IsReadOnly="True"
+                 AcceptsReturn="True"
+                 FontFamily="Consolas"
+                 FontSize="14"
+                 TextWrapping="Wrap"
+                 Background="#FF2D2D30"
+                 Foreground="White"/>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="0,10,0,0"
+                    Spacing="10">
+            <Button Name="StartButton"
+                    Content="Start"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Width="120"
+                    Click="StartButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
