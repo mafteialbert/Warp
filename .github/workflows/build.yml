@@ -33,11 +33,7 @@ jobs:
             
       - name: Publish Avalonia app (self-contained)
         run: |
-          dotnet publish $AVALONIA_PROJECT \
-          -c Release \
-          -r ${{ matrix.runtime }} \
-          --self-contained true \
-          -o output
+          dotnet publish $AVALONIA_PROJECT -c Release -r ${{ matrix.runtime }} --self-contained true -o output
 
       - name: Zip final bundle
         run: |
