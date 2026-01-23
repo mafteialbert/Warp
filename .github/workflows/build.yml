@@ -35,16 +35,11 @@ jobs:
         run: |
           dotnet publish $AVALONIA_PROJECT -c Release -r ${{ matrix.runtime }} --self-contained true -o output
 
-      - name: Zip final bundle
-        run: |
-          cd output
-          zip -r "../Warp-${{ matrix.os }}.zip" .
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: Warp-${{ matrix.os }}
-          path: Warp-${{ matrix.os }}.zip
+          path: output
 
   release:
     needs: build
