@@ -1,5 +1,7 @@
 name: Build All (FFmpeg + Rubberband + Avalonia)
 
+permissions:
+  contents: write
 on:
   push:
     tags:
