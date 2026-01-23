@@ -1,75 +1,89 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <StartupObject>Warp.Program</StartupObject>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+		<StartupObject>Warp.Program</StartupObject>
+	</PropertyGroup>
+	<ItemGroup>
+	  <None Remove="res\linux\ffmpeg" />
+	  <None Remove="res\linux\ffprobe" />
+	  <None Remove="res\linux\rubberband" />
+	  <None Remove="res\macos\ffmpeg" />
+	  <None Remove="res\macos\ffprobe" />
+	  <None Remove="res\macos\rubberband" />
+	  <None Remove="res\silero_vad.onnx" />
+	  <None Remove="res\win64\ffmpeg.exe" />
+	  <None Remove="res\win64\ffprobe.exe" />
+	  <None Remove="res\win64\rubberband.exe" />
+	  <None Remove="res\win64\sndfile.dll" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Content Include="res\linux\ffmpeg" />
+	  <Content Include="res\linux\ffprobe" />
+	  <Content Include="res\linux\rubberband" />
+	  <Content Include="res\macos\ffmpeg" />
+	  <Content Include="res\macos\ffprobe" />
+	  <Content Include="res\macos\rubberband" />
+	  <Content Include="res\silero_vad.onnx" />
+	  <Content Include="res\win64\ffmpeg.exe" />
+	  <Content Include="res\win64\ffprobe.exe" />
+	  <Content Include="res\win64\rubberband.exe" />
+	  <Content Include="res\win64\sndfile.dll" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.6" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.6" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.6" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.6" />
-    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.6">
-      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
-      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
-    </PackageReference>
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Avalonia" Version="11.3.6" />
+		<PackageReference Include="Avalonia.Desktop" Version="11.3.6" />
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.6" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.6" />
+		<!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+		<PackageReference Include="Avalonia.Diagnostics" Version="11.3.6">
+			<IncludeAssets Condition="'$(Configuration)' != 'Debug'">Content</IncludeAssets>
+			<PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\WarpCore\WarpCore.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<Content Update="res\silero_vad.onnx">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="res\linux\ffmpeg" Condition="'$(RuntimeIdentifier)'=='linux-x64'">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="res\linux\ffprobe" Condition="'$(RuntimeIdentifier)'=='linux-x64'">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="res\linux\rubberband" Condition="'$(RuntimeIdentifier)'=='linux-x64'">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="res\macos\ffmpeg" Condition="'$(RuntimeIdentifier)'=='osx-arm64'">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="res\macos\ffprobe" Condition="'$(RuntimeIdentifier)'=='osx-arm64'">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="res\macos\rubberband" Condition="'$(RuntimeIdentifier)'=='osx-arm64'">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="res\win64\ffmpeg.exe" Condition="'$(RuntimeIdentifier)'=='win-x64'">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="res\win64\ffprobe.exe" Condition="'$(RuntimeIdentifier)'=='win-x64'">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="res\win64\rubberband.exe" Condition="'$(RuntimeIdentifier)'=='win-x64'">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="res\win64\sndfile.dll" Condition="'$(RuntimeIdentifier)'=='win-x64'">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\WarpCore\WarpCore.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="res\ffmpeg.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="res\ffprobe.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="res\linux\ffmpeg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="res\linux\ffprobe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="res\linux\rubberband">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="res\macos\ffmpeg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="res\macos\ffprobe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="res\macos\rubberband">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="res\rubberband.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="res\silero_vad.onnx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="res\sndfile.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="res\win64\ffmpeg.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="res\win64\ffprobe.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="res\win64\rubberband.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="res\win64\sndfile.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
 </Project>

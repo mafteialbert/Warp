@@ -9,9 +9,9 @@ namespace WarpCore
     /// Utility class to wrap FFmpeg, FFprobe and Rubberband
     /// </summary>
     /// <param name="resourceFolderPath">Folder with executables</param>
-    public class FF(string resourceFolderPath, string suffix="")
+    public class FF(string resourceFolderPath, string suffix = "")
     {
-        private readonly string FFmpegPath = Path.Combine(resourceFolderPath, "ffmpeg"+suffix);
+        private readonly string FFmpegPath = Path.Combine(resourceFolderPath, "ffmpeg" + suffix);
         private readonly string FFprobePath = Path.Combine(resourceFolderPath, "ffprobe" + suffix);
         private readonly string RubberbandPath = Path.Combine(resourceFolderPath, "rubberband" + suffix);
 
